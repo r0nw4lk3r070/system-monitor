@@ -1,0 +1,16 @@
+{
+  "name": "hardware-monitor",
+  "version": "1.0.0",
+  "description": "Real-time hardware and system monitoring dashboard",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": ["monitoring", "hardware", "dashboard", "real-time"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
