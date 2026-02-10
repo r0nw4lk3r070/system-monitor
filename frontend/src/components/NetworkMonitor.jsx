@@ -43,7 +43,7 @@ function NetworkMonitor({ network, onExpand }) {
             <p className="text-xs text-dark-textSecondary">Download</p>
           </div>
           <p className="text-2xl font-bold text-dark-text">
-            {network.downloadSpeed.toFixed(2)}
+            {(network.downloadSpeed || 0).toFixed(2)}
           </p>
           <p className="text-xs text-dark-textSecondary">MB/s</p>
         </div>
@@ -54,7 +54,7 @@ function NetworkMonitor({ network, onExpand }) {
             <p className="text-xs text-dark-textSecondary">Upload</p>
           </div>
           <p className="text-2xl font-bold text-dark-text">
-            {network.uploadSpeed.toFixed(2)}
+            {(network.uploadSpeed || 0).toFixed(2)}
           </p>
           <p className="text-xs text-dark-textSecondary">MB/s</p>
         </div>
@@ -102,8 +102,8 @@ function NetworkMonitor({ network, onExpand }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <MetricBox label="Total Down" value={`${network.totalDownload.toFixed(2)} GB`} />
-        <MetricBox label="Total Up" value={`${network.totalUpload.toFixed(2)} GB`} />
+        <MetricBox label="Total Down" value={`${(network.totalDownload || 0).toFixed(2)} GB`} />
+        <MetricBox label="Total Up" value={`${(network.totalUpload || 0).toFixed(2)} GB`} />
       </div>
     </div>
   );

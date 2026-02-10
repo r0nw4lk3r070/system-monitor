@@ -36,7 +36,7 @@ function CPUMonitor({ cpu, onExpand }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <MetricBox label="Usage" value={`${cpu.overall.toFixed(1)}%`} />
+        <MetricBox label="Usage" value={`${(cpu.overall || 0).toFixed(1)}%`} />
         <MetricBox 
           label="Temperature" 
           value={cpu.temperature ? `${cpu.temperature.toFixed(1)}°C` : 'Not Available'}

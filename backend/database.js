@@ -73,11 +73,20 @@ const statements = {
 // Clean up old data (keep last 24 hours)
 setInterval(() => {
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  db.prepare('DELETE FROM cpu_history WHERE timestamp < ?').run(cutoff);
-  db.prepare('DELETE FROM gpu_history WHERE timestamp < ?').run(cutoff);
-  db.prepare('DELETE FROM memory_history WHERE timestamp < ?').run(cutoff);
-  db.prepare('DELETE FROM network_history WHERE timestamp < ?').run(cutoff);
-  db.prepare('DELETE FROM disk_history WHERE timestamp < ?').run(cutoff);
+  const deletedCPU = db.prepare('DELETE FROM cpu_history WHERE timestamp < ?').run(cutoff);
+  const deletedGPU = db.prepare('DELETE FROM gpu_history WHERE timestamp < ?').run(cutoff);
+  const deletedMemory = db.prepare('DELETE FROM memory_history WHERE timestamp < ?').run(cutoff);
+  const deletedNetwork = db.prepare('DELETE FROM network_history WHERE timestamp < ?').run(cutoff);
+  const deletedDisk = db.prepare('DELETE FROM disk_history WHERE timestamp < ?').run(cutoff);
+  
+  const totalDeleted = deletedCPU.changes + deletedGPU.changes + deletedMemory.changes + 
+                       deletedNetwork.changes + deletedDisk.changes;
+  
+  if (totalDeleted > 0) {
+    console.log(`🗑️  Cleaned up ${totalDeleted} old records from database`);
+    // Reclaim disk space
+    db.prepare('VACUUM').run();
+  }
 }, 60 * 60 * 1000); // Run every hour
 
 export { db, statements };

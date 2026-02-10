@@ -37,10 +37,10 @@ function MemoryMonitor({ memory, onExpand }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <MetricBox label="Usage" value={`${memory.usage.toFixed(1)}%`} />
-        <MetricBox label="Used" value={`${memory.used.toFixed(1)} GB`} />
-        <MetricBox label="Free" value={`${memory.free.toFixed(1)} GB`} />
-        <MetricBox label="Total" value={`${memory.total.toFixed(1)} GB`} />
+        <MetricBox label="Usage" value={`${(memory.usage || 0).toFixed(1)}%`} />
+        <MetricBox label="Used" value={`${(memory.used || 0).toFixed(1)} GB`} />
+        <MetricBox label="Free" value={`${(memory.free || 0).toFixed(1)} GB`} />
+        <MetricBox label="Total" value={`${(memory.total || 0).toFixed(1)} GB`} />
       </div>
 
       {/* Real-time chart */}
@@ -92,13 +92,13 @@ function MemoryMonitor({ memory, onExpand }) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-dark-textSecondary">RAM</span>
             <span className="text-sm text-dark-text font-semibold">
-              {memory.used.toFixed(1)} / {memory.total.toFixed(1)} GB ({memory.usage.toFixed(1)}%)
+              {(memory.used || 0).toFixed(1)} / {(memory.total || 0).toFixed(1)} GB ({(memory.usage || 0).toFixed(1)}%)
             </span>
           </div>
           <div className="h-3 bg-dark-cardHover rounded-full overflow-hidden">
             <div 
               className="h-full bg-green-500 transition-all duration-300"
-              style={{ width: `${memory.usage}%` }}
+              style={{ width: `${memory.usage || 0}%` }}
             />
           </div>
         </div>
@@ -108,13 +108,13 @@ function MemoryMonitor({ memory, onExpand }) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-dark-textSecondary">Swap</span>
               <span className="text-sm text-dark-text font-semibold">
-                {memory.swap.used.toFixed(1)} / {memory.swap.total.toFixed(1)} GB ({memory.swap.usage.toFixed(1)}%)
+                {(memory.swap.used || 0).toFixed(1)} / {(memory.swap.total || 0).toFixed(1)} GB ({(memory.swap.usage || 0).toFixed(1)}%)
               </span>
             </div>
             <div className="h-3 bg-dark-cardHover rounded-full overflow-hidden">
               <div 
                 className="h-full bg-yellow-500 transition-all duration-300"
-                style={{ width: `${memory.swap.usage}%` }}
+                style={{ width: `${memory.swap.usage || 0}%` }}
               />
             </div>
           </div>

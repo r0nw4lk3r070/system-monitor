@@ -54,15 +54,15 @@ function GPUMonitor({ gpu, onExpand }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <MetricBox label="GPU Usage" value={`${primary.usage.toFixed(1)}%`} />
+        <MetricBox label="GPU Usage" value={`${(primary.usage || 0).toFixed(1)}%`} />
         <MetricBox label="Temperature" value={primary.temperature ? `${primary.temperature.toFixed(1)}°C` : 'N/A'} />
         <MetricBox 
           label="VRAM Used" 
-          value={`${primary.memoryUsed} MB`} 
+          value={`${primary.memoryUsed || 0} MB`} 
         />
         <MetricBox 
           label="VRAM Total" 
-          value={`${primary.memoryTotal} MB`} 
+          value={`${primary.memoryTotal || 0} MB`} 
         />
       </div>
 
@@ -112,13 +112,13 @@ function GPUMonitor({ gpu, onExpand }) {
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-dark-textSecondary">VRAM Usage</span>
           <span className="text-sm text-dark-text font-semibold">
-            {primary.memoryUsage.toFixed(1)}%
+            {(primary.memoryUsage || 0).toFixed(1)}%
           </span>
         </div>
         <div className="h-3 bg-dark-cardHover rounded-full overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-            style={{ width: `${primary.memoryUsage}%` }}
+            style={{ width: `${primary.memoryUsage || 0}%` }}
           />
         </div>
       </div>

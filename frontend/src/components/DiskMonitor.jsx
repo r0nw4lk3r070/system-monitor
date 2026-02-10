@@ -27,9 +27,9 @@ function DiskMonitor({ disk, onExpand }) {
                 <p className="text-xs text-dark-textSecondary">{d.mount}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-dark-text">{d.usage.toFixed(1)}%</p>
-                <p className="text-xs text-dark-textSecondary">
-                  {d.used.toFixed(1)} / {d.total.toFixed(1)} GB
+              <p className="text-sm font-semibold text-dark-text">{(d.usage || 0).toFixed(1)}%</p>
+              <p className="text-xs text-dark-textSecondary">
+                  {(d.used || 0).toFixed(1)} / {(d.total || 0).toFixed(1)} GB
                 </p>
               </div>
             </div>
@@ -49,8 +49,8 @@ function DiskMonitor({ disk, onExpand }) {
 
       {disk.io && (
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <MetricBox label="Read Speed" value={`${disk.io.readSpeed.toFixed(2)} MB/s`} />
-          <MetricBox label="Write Speed" value={`${disk.io.writeSpeed.toFixed(2)} MB/s`} />
+          <MetricBox label="Read Speed" value={`${(disk.io?.readSpeed || 0).toFixed(2)} MB/s`} />
+          <MetricBox label="Write Speed" value={`${(disk.io?.writeSpeed || 0).toFixed(2)} MB/s`} />
         </div>
       )}
     </div>
