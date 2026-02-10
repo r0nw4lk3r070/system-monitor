@@ -37,7 +37,122 @@ let latestData = {
   audio: []
 };
 
-// Collect all metrics
+// Client settings (default: only CPU, GPU, Memory enabled)
+let clientSettings = {
+  networkEnabled: false,
+  diskEnabled: false,
+  processesEnabled: false,
+  systemEnabled: false
+};
+
+let collectionIntervals = {};
+
+// Collect essential metrics only (CPU, GPU, Memory)
+async function collectEssentialMetrics() {
+  try {
+    const [cpu, gpu, memory] = await Promise.all([
+      collectCPUData(),
+      collectGPUData(),
+      collectMemoryData()
+    ]);
+
+    latestData.cpu = cpu;
+    latestData.gpu = gpu;
+    latestData.memory = memory;
+
+    // Save to database
+    const timestamp = Date.now();
+    if (cpu) {
+      statements.insertCPU.run(timestamp, cpu.overall || 0, cpu.temperature, cpu.frequency || 0);
+    }
+    if (gpu?.primary) {
+      statements.insertGPU.run(
+        timestamp,
+        gpu.primary.usage || 0,
+        gpu.primary.temperature,
+        gpu.primary.memoryUsed || 0,
+        gpu.primary.memoryTotal || 0
+      );
+    }
+    if (memory) {
+      statements.insertMemory.run(timestamp, memory.used || 0, memory.total || 0, memory.usage || 0);
+    }
+
+    return { cpu, gpu, memory };
+  } catch (error) {
+    console.error('Essential metrics collection error:', error);
+    return null;
+  }
+}
+
+// Setup collection intervals based on enabled features
+function setupCollectionIntervals() {
+  // Clear existing intervals
+  Object.values(collectionIntervals).forEach(clearInterval);
+  collectionIntervals = {};
+
+  console.log('🔄 Setting up collection intervals with settings:', clientSettings);
+
+  // Essential metrics: CPU, GPU, Memory (2s)
+  collectionIntervals.essential = setInterval(async () => {
+    await collectEssentialMetrics();
+    io.emit('metrics', latestData);
+  }, 2000);
+
+  // Network (5s, if enabled)
+  if (clientSettings.networkEnabled) {
+    collectionIntervals.network = setInterval(async () => {
+      const network = await collectNetworkData();
+      latestData.network = network;
+      
+      const timestamp = Date.now();
+      if (network) {
+        statements.insertNetwork.run(timestamp, network.downloadSpeed || 0, network.uploadSpeed || 0);
+      }
+      io.emit('metrics', latestData);
+    }, 5000);
+  }
+
+  // Processes (5s, if enabled - EXPENSIVE)
+  if (clientSettings.processesEnabled) {
+    collectionIntervals.processes = setInterval(async () => {
+      latestData.processes = await getProcesses();
+      io.emit('metrics', latestData);
+    }, 5000);
+  }
+
+  // Disk I/O (10s, if enabled - EXPENSIVE)
+  if (clientSettings.diskEnabled) {
+    collectionIntervals.disk = setInterval(async () => {
+      const disk = await collectDiskData();
+      latestData.disk = disk;
+      
+      const timestamp = Date.now();
+      if (disk?.disks) {
+        disk.disks.forEach(d => {
+          statements.insertDisk.run(timestamp, d.name, d.used, d.total, d.usage);
+        });
+      }
+      io.emit('metrics', latestData);
+    }, 10000);
+  }
+
+  // System/Peripherals (10s, if enabled)
+  if (clientSettings.systemEnabled) {
+   collectionIntervals.system = setInterval(async () => {
+      latestData.system = await collectSystemData();
+      const [usb, audio] = await Promise.all([getUSBDevices(), getAudioDevices()]);
+      latestData.usb = usb;
+      latestData.audio = audio;
+      io.emit('metrics', latestData);
+    }, 10000);
+  }
+
+  const activeIntervals = Object.keys(collectionIntervals);
+  console.log(`✅ Active intervals (${activeIntervals.length}):`, activeIntervals.join(', '));
+}
+
+// Collect all metrics (used for initial load and API)
 async function collectAllMetrics() {
   try {
     const [cpu, gpu, memory, disk, network, system, processes] = await Promise.all([
@@ -101,27 +216,21 @@ async function collectAllMetrics() {
   }
 }
 
-// Update USB and audio devices less frequently (every 10 seconds)
-async function updatePeripherals() {
-  try {
-    const [usb, audio] = await Promise.all([
-      getUSBDevices(),
-      getAudioDevices()
-    ]);
-    
-    latestData.usb = usb;
-    latestData.audio = audio;
-  } catch (error) {
-    console.error('Error updating peripherals:', error);
-  }
-}
-
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   
   // Send initial data immediately
   socket.emit('metrics', latestData);
+  
+  // Handle settings updates
+  socket.on('update-settings', (settings) => {
+    console.log('🔧 Settings updated:', settings);
+    clientSettings = { ...clientSettings, ...settings };
+    
+    // Restart collection intervals with new settings
+    setupCollectionIntervals();
+  });
   
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
@@ -231,14 +340,23 @@ app.get('/api/network-info', (req, res) => {
 // Start metrics collection
 console.log('Starting metrics collection...');
 
-// Collect metrics every 1 second for real-time updates
-setInterval(async () => {
-  const data = await collectAllMetrics();
-  io.emit('metrics', data);
-}, 1000);
+// Setup initial collection intervals
+setupCollectionIntervals();
 
-// Update peripherals every 10 seconds
-setInterval(updatePeripherals, 10000);
+// Do initial collection
+(async () => {
+  await collectEssentialMetrics();
+  if (clientSettings.networkEnabled) latestData.network = await collectNetworkData();
+  if (clientSettings.diskEnabled) latestData.disk = await collectDiskData();
+  if (clientSettings.processesEnabled) latestData.processes = await getProcesses();
+  if (clientSettings.systemEnabled) {
+    latestData.system = await collectSystemData();
+    const [usb, audio] = await Promise.all([getUSBDevices(), getAudioDevices()]);
+    latestData.usb = usb;
+    latestData.audio = audio;
+  }
+  console.log('✅ Initial data collection complete\n');
+})();
 
 // Start server
 httpServer.listen(PORT, '0.0.0.0', async () => {

@@ -5,7 +5,7 @@ import MemoryMonitor from './MemoryMonitor';
 import DiskMonitor from './DiskMonitor';
 import NetworkMonitor from './NetworkMonitor';
 
-function Dashboard({ metrics, onSelectView }) {
+function Dashboard({ metrics, onSelectView, settings }) {
   if (!metrics) return null;
 
   const { cpu, gpu, memory, disk, network, system, processes } = metrics;
@@ -38,35 +38,41 @@ function Dashboard({ metrics, onSelectView }) {
           color="green"
           onClick={() => onSelectView('memory')}
         />
-        <StatCard
-          icon={<Network className="w-6 h-6" />}
-          title="Network"
-          value={`${network?.downloadSpeed?.toFixed(2) || 0} MB/s`}
-          subtitle={`↑ ${network?.uploadSpeed?.toFixed(2) || 0} MB/s`}
-          color="orange"
-          onClick={() => onSelectView('network')}
-        />
-        <StatCard
-          icon={<Clock className="w-6 h-6" />}
-          title="Uptime"
-          value={system?.uptime?.formatted || 'N/A'}
-          subtitle="System Uptime"
-          color="blue"
-        />
-        <StatCard
-          icon={<Monitor className="w-6 h-6" />}
-          title="Hostname"
-          value={system?.info?.os?.hostname || 'N/A'}
-          subtitle="System Name"
-          color="green"
-        />
-        <StatCard
-          icon={<Package className="w-6 h-6" />}
-          title="OS"
-          value={system?.info?.os?.distro?.split(' ').slice(0, 2).join(' ') || 'N/A'}
-          subtitle={system?.info?.os?.distro ? 'Windows' : 'N/A'}
-          color="purple"
-        />
+        {settings?.networkEnabled && (
+          <StatCard
+            icon={<Network className="w-6 h-6" />}
+            title="Network"
+            value={`${network?.downloadSpeed?.toFixed(2) || 0} MB/s`}
+            subtitle={`↑ ${network?.uploadSpeed?.toFixed(2) || 0} MB/s`}
+            color="orange"
+            onClick={() => onSelectView('network')}
+          />
+        )}
+        {settings?.systemEnabled && (
+          <>
+            <StatCard
+              icon={<Clock className="w-6 h-6" />}
+              title="Uptime"
+              value={system?.uptime?.formatted || 'N/A'}
+              subtitle="System Uptime"
+              color="blue"
+            />
+            <StatCard
+              icon={<Monitor className="w-6 h-6" />}
+              title="Hostname"
+              value={system?.info?.os?.hostname || 'N/A'}
+              subtitle="System Name"
+              color="green"
+            />
+            <StatCard
+              icon={<Package className="w-6 h-6" />}
+              title="OS"
+              value={system?.info?.os?.distro?.split(' ').slice(0, 2).join(' ') || 'N/A'}
+              subtitle={system?.info?.os?.distro ? 'Windows' : 'N/A'}
+              color="purple"
+            />
+          </>
+        )}
       </div>
 
       {/* Main Monitors Grid */}
@@ -74,35 +80,43 @@ function Dashboard({ metrics, onSelectView }) {
         <CPUMonitor cpu={cpu} onExpand={() => onSelectView('cpu')} />
         <GPUMonitor gpu={gpu} onExpand={() => onSelectView('gpu')} />
         <MemoryMonitor memory={memory} onExpand={() => onSelectView('memory')} />
-        <NetworkMonitor network={network} onExpand={() => onSelectView('network')} />
+        {settings?.networkEnabled && (
+          <NetworkMonitor network={network} onExpand={() => onSelectView('network')} />
+        )}
       </div>
 
       {/* Disk and Processes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DiskMonitor disk={disk} onExpand={() => onSelectView('disk')} />
-        
-        {/* Top Processes */}
-        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-yellow-500" />
-            Top Processes
-          </h2>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {processes?.slice(0, 10).map((proc, index) => (
-              <div key={proc.pid} className="flex items-center justify-between p-2 bg-dark-cardHover rounded">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{proc.name}</p>
-                  <p className="text-xs text-dark-textSecondary">PID: {proc.pid}</p>
-                </div>
-                <div className="text-right ml-4">
-                  <p className="text-sm font-medium">{proc.cpu.toFixed(1)}% CPU</p>
-                  <p className="text-xs text-dark-textSecondary">{proc.memMB} MB</p>
-                </div>
+      {(settings?.diskEnabled || settings?.processesEnabled) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {settings?.diskEnabled && (
+            <DiskMonitor disk={disk} onExpand={() => onSelectView('disk')} />
+          )}
+          
+          {/* Top Processes */}
+          {settings?.processesEnabled && (
+            <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-500" />
+                Top Processes
+              </h2>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {processes?.slice(0, 10).map((proc, index) => (
+                  <div key={proc.pid} className="flex items-center justify-between p-2 bg-dark-cardHover rounded">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{proc.name}</p>
+                      <p className="text-xs text-dark-textSecondary">PID: {proc.pid}</p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-sm font-medium">{proc.cpu.toFixed(1)}% CPU</p>
+                      <p className="text-xs text-dark-textSecondary">{proc.memMB} MB</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

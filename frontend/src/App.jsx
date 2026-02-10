@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import Dashboard from './components/Dashboard';
 import DetailView from './components/DetailView';
+import Settings from './components/Settings';
 import { Activity } from 'lucide-react';
 
 // Auto-detect backend URL based on current hostname
@@ -17,11 +18,23 @@ const getBackendURL = () => {
 
 const SOCKET_URL = getBackendURL();
 
+// Default settings: CPU, GPU, Memory always on. Others optional.
+const DEFAULT_SETTINGS = {
+  networkEnabled: false,
+  diskEnabled: false,
+  processesEnabled: false,
+  systemEnabled: false
+};
+
 function App() {
   const [socket, setSocket] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [connected, setConnected] = useState(false);
   const [selectedView, setSelectedView] = useState(null);
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('monitorSettings');
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+  });
 
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
@@ -34,6 +47,8 @@ function App() {
     newSocket.on('connect', () => {
       console.log('Connected to server');
       setConnected(true);
+      // Send settings to backend on connect
+      newSocket.emit('update-settings', settings);
     });
 
     newSocket.on('disconnect', () => {
@@ -51,6 +66,15 @@ function App() {
       newSocket.close();
     };
   }, []);
+
+  // Handle settings changes
+  const handleSettingsChange = (newSettings) => {
+    setSettings(newSettings);
+    localStorage.setItem('monitorSettings', JSON.stringify(newSettings));
+    if (socket) {
+      socket.emit('update-settings', newSettings);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-dark-bg">
@@ -76,6 +100,7 @@ function App() {
                 ← Back to Dashboard
               </button>
             )}
+            <Settings settings={settings} onSettingsChange={handleSettingsChange} />
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className="text-sm text-dark-textSecondary">
@@ -110,6 +135,7 @@ function App() {
           <Dashboard 
             metrics={metrics} 
             onSelectView={setSelectedView}
+            settings={settings}
           />
         )}
       </main>
